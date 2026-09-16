@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Österreich Bundesländer & Hauptstädte Trainer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .state-path {
+            transition: all 0.25s ease;
+            cursor: pointer;
+            stroke: #ffffff;
+            stroke-width: 1.5;
+            stroke-linejoin: round;
+        }
+        .state-path:hover {
+            opacity: 0.85;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+        .state-active {
+            fill: #f59e0b !important;
+            stroke: #b45309 !important;
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.6));
+        }
+        .capital-dot {
+            transition: all 0.3s ease;
+        }
+        .capital-dot-active {
+            fill: #ef4444 !important;
+            r: 7 !important;
+            stroke: #ffffff;
+            stroke-width: 2;
+            animation: pulse-dot 1.5s infinite;
+        }
+        @keyframes pulse-dot {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased selection:bg-indigo-500 selection:text-white">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-red-200">
+                    🇦🇹
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800 leading-tight">Österreich-Trainer</h1>
+                    <p class="text-xs text-slate-500">Bundesländer & Hauptstädte</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button onclick="switchTab('trainer')" id="tab-btn-trainer" class="px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-indigo-600 text-white shadow-sm">
+                    🎯 Training
+                </button>
+                <button onclick="switchTab('stats')" id="tab-btn-stats" class="px-4 py-2 rounded-lg font-semibold text-sm transition-all text-slate-600 hover:bg-slate-100">
+                    📊 Tagesstatistik
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-6 w-full flex-grow">
+
+        <!-- TRAINER TAB -->
+        <div id="tab-trainer" class="space-y-6">
+            
+            <div id="setup-panel" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                <div class="border-b border-slate-100 pb-4">
+                    <h2 class="text-xl font-bold text-slate-800">Übungsmodus auswählen</h2>
+                    <p class="text-sm text-slate-500">Starte einen 5-Minuten Trainingsblock und messe deine Geschwindigkeit!</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Mode 1 -->
+                    <label class="mode-card cursor-pointer border-2 border-indigo-500 bg-indigo-50/50 p-5 rounded-xl transition-all hover:shadow-md flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="p-2 bg-indigo-100 text-indigo-700 rounded-lg font-bold text-xs uppercase tracking-wider">Modus 1</span>
+                                <input type="radio" name="mode" value="mc" checked class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-base mb-1">Single Choice</h3>
+                            <p class="text-xs text-slate-600">2-3 Antwortmöglichkeiten. Zuordnung in beide Richtungen (Land ↔ Hauptstadt).</p>
+                        </div>
+                    </label>
+
+                    <!-- Mode 2 -->
+                    <label class="mode-card cursor-pointer border-2 border-slate-200 p-5 rounded-xl transition-all hover:border-indigo-300 hover:shadow-md flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="p-2 bg-slate-100 text-slate-700 rounded-lg font-bold text-xs uppercase tracking-wider">Modus 2</span>
+                                <input type="radio" name="mode" value="text" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-base mb-1">Freies Textfeld</h3>
+                            <p class="text-xs text-slate-600">Freies Eintippen des gesuchten Bundeslandes oder der Hauptstadt.</p>
+                        </div>
+                    </label>
+
+                    <!-- Mode 3 -->
+                    <label class="mode-card cursor-pointer border-2 border-slate-200 p-5 rounded-xl transition-all hover:border-indigo-300 hover:shadow-md flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="p-2 bg-slate-100 text-slate-700 rounded-lg font-bold text-xs uppercase tracking-wider">Modus 3</span>
+                                <input type="radio" name="mode" value="map" class="w-4 h-4 text-indigo-600 focus:ring-indigo-500">
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-base mb-1">Karten-Profi</h3>
+                            <p class="text-xs text-slate-600">Markiertes Gebiet auf der Österreich-Karte erkennen. Eingabe von Bundesland UND Hauptstadt!</p>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
+                    <div class="flex items-center gap-2 text-slate-600 text-sm">
+                        <span class="text-lg">⏱️</span> Dauer: <strong class="text-slate-800">5 Minuten pro Durchgang</strong>
+                    </div>
+                    <button onclick="startSession()" class="w-full sm:w-auto px-8 py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-200 hover:shadow-xl transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                        <span>▶ 5-Minuten Block Starten</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="active-session" class="hidden space-y-6">
+                <!-- Status HUD Bar -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+                    <!-- Timer -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center font-bold text-xl">
+                            ⏱️
+                        </div>
+                        <div>
+                            <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Verbleibende Zeit</div>
+                            <div id="timer-display" class="text-2xl font-black text-slate-800 tracking-tight">05:00</div>
+                        </div>
+                    </div>
+
+                    <!-- Live Stats -->
+                    <div class="flex items-center gap-6">
+                        <div class="text-center">
+                            <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Gelöst</div>
+                            <div id="hud-total" class="text-xl font-extrabold text-slate-700">0</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Richtig</div>
+                            <div id="hud-correct" class="text-xl font-extrabold text-emerald-600">0</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Tempo</div>
+                            <div id="hud-speed" class="text-xl font-extrabold text-indigo-600">0 <span class="text-xs font-normal text-slate-400">/min</span></div>
+                        </div>
+                    </div>
+
+                    <button onclick="cancelSession()" class="px-3 py-1.5 text-xs text-slate-400 hover:text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                        Abbrechen
+                    </button>
+                </div>
+
+                <!-- Quiz Card Container -->
+                <div class="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                    <div id="feedback-banner" class="hidden absolute top-0 left-0 right-0 p-3 text-center font-bold text-sm text-white transition-all"></div>
+
+                    <!-- Active Task Title -->
+                    <div class="text-center mb-6">
+                        <span id="task-badge" class="px-3 py-1 bg-slate-100 text-slate-600 font-bold text-xs rounded-full uppercase tracking-wider inline-block mb-2">Aufgabe</span>
+                        <h2 id="task-question" class="text-2xl md:text-3xl font-extrabold text-slate-800">Frage wird geladen...</h2>
+                    </div>
+
+                    <!-- MAP DISPLAY (Always active for Mode 3, optional preview for Mode 1 & 2) -->
+                    <div id="map-container" class="mb-6 max-w-xl mx-auto bg-sky-50/50 p-3 rounded-2xl border border-sky-100 shadow-inner">
+                        <svg id="austria-svg" viewBox="0 0 1000 600" class="w-full h-auto drop-shadow-md">
+                            <!-- SVG paths will be injected dynamically -->
+                        </svg>
+                    </div>
+
+                    <!-- ANSWER CONTROLS -->
+                    <!-- Single Choice Mode Container -->
+                    <div id="mc-options" class="hidden grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl mx-auto">
+                        <!-- Buttons rendered dynamically -->
+                    </div>
+
+                    <!-- Text Mode Container -->
+                    <div id="text-input-container" class="hidden max-w-md mx-auto space-y-4">
+                        <div class="relative">
+                            <input type="text" id="single-text-input" autocomplete="off" placeholder="Deine Antwort eingeben..." 
+                                class="w-full px-5 py-3.5 text-lg font-medium border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition text-center">
+                        </div>
+                        <button onclick="submitTextAnswer()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition transform active:scale-98">
+                            Antwort Bestätigen ↵
+                        </button>
+                    </div>
+
+                    <!-- Map Dual Text Mode Container (Mode 3) -->
+                    <div id="map-input-container" class="hidden max-w-lg mx-auto space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">1. Bundesland</label>
+                                <input type="text" id="map-state-input" autocomplete="off" placeholder="z.B. Tirol" 
+                                    class="w-full px-4 py-3 text-base font-medium border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">2. Hauptstadt</label>
+                                <input type="text" id="map-capital-input" autocomplete="off" placeholder="z.B. Innsbruck" 
+                                    class="w-full px-4 py-3 text-base font-medium border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none transition">
+                            </div>
+                        </div>
+                        <button onclick="submitMapAnswer()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition transform active:scale-98">
+                            Beide Antworten Überprüfen ↵
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="result-panel" class="hidden bg-white p-8 rounded-2xl border border-slate-200 shadow-xl max-w-xl mx-auto text-center space-y-6">
+                <div class="inline-flex p-4 rounded-full bg-emerald-50 text-emerald-600 text-4xl mb-2">
+                    🏆
+                </div>
+                <div>
+                    <h2 class="text-3xl font-black text-slate-800">5 Minuten Abgeschlossen!</h2>
+                    <p class="text-sm text-slate-500 mt-1">Hervorragende Leistung! Hier ist deine Auswertung:</p>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div class="p-2">
+                        <div class="text-xs text-slate-400 font-semibold uppercase">Aufgaben</div>
+                        <div id="res-total" class="text-2xl font-black text-slate-800">0</div>
+                    </div>
+                    <div class="p-2">
+                        <div class="text-xs text-slate-400 font-semibold uppercase">Richtig</div>
+                        <div id="res-correct" class="text-2xl font-black text-emerald-600">0</div>
+                    </div>
+                    <div class="p-2">
+                        <div class="text-xs text-slate-400 font-semibold uppercase">Quote</div>
+                        <div id="res-accuracy" class="text-2xl font-black text-indigo-600">0%</div>
+                    </div>
+                    <div class="p-2">
+                        <div class="text-xs text-slate-400 font-semibold uppercase">Geschw.</div>
+                        <div id="res-speed" class="text-2xl font-black text-purple-600">0/m</div>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+                    <button onclick="startSession()" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md transition">
+                        🔄 Noch einmal versuchen
+                    </button>
+                    <button onclick="switchTab('stats')" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                        📊 Statistik ansehen
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- STATS TAB -->
+        <div id="tab-stats" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Tagesstatistik & Fortschritt</h2>
+                    <p class="text-sm text-slate-500">Übersicht aller deiner absolvierten 5-Minuten Blöcke</p>
+                </div>
+                <button onclick="clearHistory()" class="text-xs text-red-500 hover:text-red-700 font-semibold underline">
+                    Statistik zurücksetzen
+                </button>
+            </div>
+
+            <!-- Global Best Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center font-bold text-2xl">
+                        🥇
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-semibold uppercase">Bester Score (5 Min)</div>
+                        <div id="stat-best-score" class="text-2xl font-black text-slate-800">0 Gelöst</div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-500 flex items-center justify-center font-bold text-2xl">
+                        🎯
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-semibold uppercase">Durchschnitts-Quote</div>
+                        <div id="stat-avg-acc" class="text-2xl font-black text-slate-800">0%</div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center font-bold text-2xl">
+                        📅
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-400 font-semibold uppercase">Absolvierte Blöcke</div>
+                        <div id="stat-total-sessions" class="text-2xl font-black text-slate-800">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Table -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                    <h3 class="font-bold text-slate-800 text-sm">Verlauf aller Tage</h3>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-xs font-semibold text-slate-400 uppercase bg-slate-50/50">
+                                <th class="p-4">Datum</th>
+                                <th class="p-4">Durchgänge</th>
+                                <th class="p-4">Gesamt Gelöst</th>
+                                <th class="p-4">Richtig</th>
+                                <th class="p-4">Genauigkeit</th>
+                                <th class="p-4">Bester 5-Min Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stats-table-body" class="divide-y divide-slate-100 text-slate-700">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-400">
+        Österreich Geography Learning Tool • 9 Bundesländer & Hauptstädte
+    </footer>
+
+    <script>
+        // Data for the 9 Austrian Federal States & Capitals with SVG paths
+        const AUSTRIA_DATA = [
+            {
+                id: 'B',
+                name: 'Burgenland',
+                capital: 'Eisenstadt',
+                cx: 880, cy: 310,
+                path: 'M 850 200 L 880 200 L 910 260 L 880 380 L 850 420 L 830 360 L 850 290 Z'
+            },
+            {
+                id: 'K',
+                name: 'Kärnten',
+                capital: 'Klagenfurt',
+                cx: 520, cy: 450,
+                path: 'M 400 400 L 510 390 L 610 410 L 620 480 L 480 490 L 390 450 Z'
+            },
+            {
+                id: 'N0',
+                name: 'Niederösterreich',
+                capital: 'St. Pölten',
+                cx: 730, cy: 200,
+                path: 'M 620 120 L 810 110 L 860 210 L 820 310 L 680 320 L 630 250 L 680 180 Z'
+            },
+            {
+                id: 'O0',
+                name: 'Oberösterreich',
+                capital: 'Linz',
+                cx: 550, cy: 190,
+                path: 'M 480 140 L 620 120 L 630 250 L 580 300 L 470 260 Z'
+            },
+            {
+                id: 'S',
+                name: 'Salzburg',
+                capital: 'Salzburg',
+                cx: 420, cy: 300,
+                path: 'M 360 250 L 470 260 L 510 390 L 400 400 L 370 330 Z'
+            },
+            {
+                id: 'ST',
+                name: 'Steiermark',
+                capital: 'Graz',
+                cx: 670, cy: 360,
+                path: 'M 580 300 L 680 320 L 820 310 L 830 360 L 730 460 L 610 410 L 510 390 Z'
+            },
+            {
+                id: 'T',
+                name: 'Tirol',
+                capital: 'Innsbruck',
+                cx: 240, cy: 340,
+                path: 'M 140 310 L 320 280 L 370 330 L 290 380 L 160 380 Z M 390 400 L 440 390 L 430 430 L 380 430 Z' // Osttirol included
+            },
+            {
+                id: 'V',
+                name: 'Vorarlberg',
+                capital: 'Bregenz',
+                cx: 80, cy: 320,
+                path: 'M 50 280 L 140 310 L 130 380 L 60 370 Z'
+            },
+            {
+                id: 'W',
+                name: 'Wien',
+                capital: 'Wien',
+                cx: 805, cy: 205,
+                path: 'M 795 195 L 815 195 L 815 215 L 795 215 Z'
+            }
+        ];
+
+        // Session State
+        let currentMode = 'mc';
+        let timerInterval = null;
+        let timeRemaining = 300; // 5 minutes
+        let sessionActive = false;
+        
+        let sessionStats = {
+            total: 0,
+            correct: 0,
+            startTime: null
+        };
+
+        let currentQuestion = null;
+
+        // --- INITIALIZATION ---
+        window.addEventListener('DOMContentLoaded', () => {
+            renderMapSVG();
+            loadStats();
+            setupModeRadioListeners();
+
+            // Keyboard listeners for enter key submissions
+            document.addEventListener('keydown', (e) => {
+                if (!sessionActive) return;
+                if (e.key === 'Enter') {
+                    if (currentMode === 'text') submitTextAnswer();
+                    if (currentMode === 'map') submitMapAnswer();
+                }
+            });
+        });
+
+        // Mode Radio Styling Switcher
+        function setupModeRadioListeners() {
+            const radios = document.querySelectorAll('input[name="mode"]');
+            radios.forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    document.querySelectorAll('.mode-card').forEach(card => {
+                        card.classList.remove('border-indigo-500', 'bg-indigo-50/50');
+                        card.classList.add('border-slate-200');
+                    });
+                    const parentCard = e.target.closest('.mode-card');
+                    parentCard.classList.remove('border-slate-200');
+                    parentCard.classList.add('border-indigo-500', 'bg-indigo-50/50');
+                });
+            });
+        }
+
+        // --- MAP SVG RENDERER ---
+        function renderMapSVG() {
+            const svg = document.getElementById('austria-svg');
+            let html = '';
+
+            // Draw Federal States
+            AUSTRIA_DATA.forEach(state => {
+                html += `
+                    <path id="svg-state-${state.id}" 
+                          d="${state.path}" 
+                          class="state-path fill-slate-200 hover:fill-indigo-200" 
+                          data-id="${state.id}"
+                          onclick="handleStateClick('${state.id}')">
+                    </path>
+                `;
+            });
+
+            // Draw Capitals (Dots)
+            AUSTRIA_DATA.forEach(state => {
+                html += `
+                    <circle id="svg-dot-${state.id}" 
+                            cx="${state.cx}" 
+                            cy="${state.cy}" 
+                            r="4.5" 
+                            class="capital-dot fill-slate-700" 
+                            data-id="${state.id}">
+                    </circle>
+                    <text x="${state.cx}" y="${state.cy - 9}" 
+                          text-anchor="middle" 
+                          class="text-[10px] font-bold fill-slate-600 pointer-events-none select-none">
+                          ${state.capital}
+                    </text>
+                `;
+            });
+
+            svg.innerHTML = html;
+        }
+
+        function highlightStateOnMap(stateId) {
+            // Reset all
+            document.querySelectorAll('.state-path').forEach(el => {
+                el.classList.remove('state-active');
+                el.style.fill = '#e2e8f0';
+            });
+            document.querySelectorAll('.capital-dot').forEach(el => {
+                el.classList.remove('capital-dot-active');
+            });
+
+            if (!stateId) return;
+
+            // Highlight chosen
+            const stateEl = document.getElementById(`svg-state-${stateId}`);
+            const dotEl = document.getElementById(`svg-dot-${stateId}`);
+            if (stateEl) stateEl.classList.add('state-active');
+            if (dotEl) dotEl.classList.add('capital-dot-active');
+        }
+
+        function handleStateClick(stateId) {
+            if (!sessionActive) return;
+            // Map click feedback if needed
+        }
+
+        // --- TAB NAVIGATION ---
+        function switchTab(tab) {
+            const trainerTab = document.getElementById('tab-trainer');
+            const statsTab = document.getElementById('tab-stats');
+            const btnTrainer = document.getElementById('tab-btn-trainer');
+            const btnStats = document.getElementById('tab-btn-stats');
+
+            if (tab === 'trainer') {
+                trainerTab.classList.remove('hidden');
+                statsTab.classList.add('hidden');
+                btnTrainer.className = "px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-indigo-600 text-white shadow-sm";
+                btnStats.className = "px-4 py-2 rounded-lg font-semibold text-sm transition-all text-slate-600 hover:bg-slate-100";
+            } else {
+                trainerTab.classList.add('hidden');
+                statsTab.classList.remove('hidden');
+                btnStats.className = "px-4 py-2 rounded-lg font-semibold text-sm transition-all bg-indigo-600 text-white shadow-sm";
+                btnTrainer.className = "px-4 py-2 rounded-lg font-semibold text-sm transition-all text-slate-600 hover:bg-slate-100";
+                renderStatsTable();
+            }
+        }
+
+        // --- SESSION CONTROL ---
+        function startSession() {
+            const modeRadio = document.querySelector('input[name="mode"]:checked');
+            currentMode = modeRadio ? modeRadio.value : 'mc';
+
+            sessionStats = {
+                total: 0,
+                correct: 0,
+                startTime: Date.now()
+            };
+
+            timeRemaining = 300; // 5 minutes
+            sessionActive = true;
+
+            // UI Adjustments
+            document.getElementById('setup-panel').classList.add('hidden');
+            document.getElementById('result-panel').classList.add('hidden');
+            document.getElementById('active-session').classList.remove('hidden');
+
+            updateHUD();
+            startTimer();
+            nextQuestion();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                updateHUD();
+
+                if (timeRemaining <= 0) {
+                    endSession();
+                }
+            }, 1000);
+        }
+
+        function cancelSession() {
+            clearInterval(timerInterval);
+            sessionActive = false;
+            document.getElementById('active-session').classList.add('hidden');
+            document.getElementById('setup-panel').classList.remove('hidden');
+            highlightStateOnMap(null);
+        }
+
+        function updateHUD() {
+            const mins = Math.floor(timeRemaining / 60);
+            const secs = timeRemaining % 60;
+            document.getElementById('timer-display').innerText = 
+                `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+            document.getElementById('hud-total').innerText = sessionStats.total;
+            document.getElementById('hud-correct').innerText = sessionStats.correct;
+
+            const elapsedMinutes = (300 - timeRemaining) / 60;
+            const speed = elapsedMinutes > 0 ? (sessionStats.total / elapsedMinutes).toFixed(1) : '0';
+            document.getElementById('hud-speed').innerText = speed;
+        }
+
+        function endSession() {
+            clearInterval(timerInterval);
+            sessionActive = false;
+
+            // Hide active session
+            document.getElementById('active-session').classList.add('hidden');
+            document.getElementById('result-panel').classList.remove('hidden');
+
+            // Compute statistics
+            const accuracy = sessionStats.total > 0 ? Math.round((sessionStats.correct / sessionStats.total) * 100) : 0;
+            const speed = (sessionStats.total / 5).toFixed(1);
+
+            document.getElementById('res-total').innerText = sessionStats.total;
+            document.getElementById('res-correct').innerText = sessionStats.correct;
+            document.getElementById('res-accuracy').innerText = `${accuracy}%`;
+            document.getElementById('res-speed').innerText = `${speed}/m`;
+
+            // Save session to localStorage
+            saveSessionResult({
+                date: new Date().toISOString().split('T')[0],
+                total: sessionStats.total,
+                correct: sessionStats.correct,
+                accuracy: accuracy
+            });
+
+            // Trigger celebration confetti if good score
+            if (accuracy >= 70 && sessionStats.total >= 5) {
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            }
+        }
+
+        // --- QUESTION GENERATOR ---
+        function nextQuestion() {
+            const randomState = AUSTRIA_DATA[Math.floor(Math.random() * AUSTRIA_DATA.length)];
+            const direction = Math.random() < 0.5 ? 'state_to_capital' : 'capital_to_state';
+
+            currentQuestion = {
+                state: randomState,
+                direction: direction
+            };
+
+            // Reset Inputs & Views
+            document.getElementById('mc-options').classList.add('hidden');
+            document.getElementById('text-input-container').classList.add('hidden');
+            document.getElementById('map-input-container').classList.add('hidden');
+            
+            document.getElementById('single-text-input').value = '';
+            document.getElementById('map-state-input').value = '';
+            document.getElementById('map-capital-input').value = '';
+
+            // Setup question UI based on mode
+            if (currentMode === 'mc') {
+                setupMCMode();
+            } else if (currentMode === 'text') {
+                setupTextMode();
+            } else if (currentMode === 'map') {
+                setupMapMode();
+            }
+        }
+
+        // MODE 1: Single Choice (2-3 options)
+        function setupMCMode() {
+            highlightStateOnMap(currentQuestion.state.id);
+            const isStateToCapital = currentQuestion.direction === 'state_to_capital';
+
+            document.getElementById('task-badge').innerText = 'Single Choice';
+            document.getElementById('task-question').innerText = isStateToCapital 
+                ? `Hauptstadt von ${currentQuestion.state.name}?` 
+                : `Zu welchem Bundesland gehört ${currentQuestion.state.capital}?`;
+
+            // Prepare 3 distractors/options
+            const correctAnswer = isStateToCapital ? currentQuestion.state.capital : currentQuestion.state.name;
+            const options = [correctAnswer];
+
+            while (options.length < 3) {
+                const rand = AUSTRIA_DATA[Math.floor(Math.random() * AUSTRIA_DATA.length)];
+                const optionVal = isStateToCapital ? rand.capital : rand.name;
+                if (!options.includes(optionVal)) {
+                    options.push(optionVal);
+                }
+            }
+
+            // Shuffle
+            options.sort(() => Math.random() - 0.5);
+
+            // Render buttons
+            const container = document.getElementById('mc-options');
+            container.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "w-full py-4 px-4 bg-slate-50 hover:bg-indigo-50 border-2 border-slate-200 hover:border-indigo-500 rounded-xl font-bold text-slate-800 transition transform active:scale-95 text-center shadow-sm";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt, correctAnswer);
+                container.appendChild(btn);
+            });
+
+            container.classList.remove('hidden');
+        }
+
+        // MODE 2: Free Text
+        function setupTextMode() {
+            highlightStateOnMap(currentQuestion.state.id);
+            const isStateToCapital = currentQuestion.direction === 'state_to_capital';
+
+            document.getElementById('task-badge').innerText = 'Freies Textfeld';
+            document.getElementById('task-question').innerText = isStateToCapital 
+                ? `Wie heißt die Hauptstadt von ${currentQuestion.state.name}?` 
+                : `In welchem Bundesland liegt ${currentQuestion.state.capital}?`;
+
+            const container = document.getElementById('text-input-container');
+            container.classList.remove('hidden');
+            setTimeout(() => document.getElementById('single-text-input').focus(), 50);
+        }
+
+        function submitTextAnswer() {
+            const inputVal = document.getElementById('single-text-input').value.trim();
+            const isStateToCapital = currentQuestion.direction === 'state_to_capital';
+            const correctAnswer = isStateToCapital ? currentQuestion.state.capital : currentQuestion.state.name;
+            checkAnswer(inputVal, correctAnswer);
+        }
+
+        // MODE 3: Map Dual Input
+        function setupMapMode() {
+            highlightStateOnMap(currentQuestion.state.id);
+
+            document.getElementById('task-badge').innerText = 'Karten-Profi';
+            document.getElementById('task-question').innerText = 'Welches Bundesland & welche Hauptstadt ist markiert?';
+
+            const container = document.getElementById('map-input-container');
+            container.classList.remove('hidden');
+            setTimeout(() => document.getElementById('map-state-input').focus(), 50);
+        }
+
+        function submitMapAnswer() {
+            const stateVal = document.getElementById('map-state-input').value.trim();
+            const capitalVal = document.getElementById('map-capital-input').value.trim();
+
+            const isStateCorrect = normalizeString(stateVal) === normalizeString(currentQuestion.state.name);
+            const isCapitalCorrect = normalizeString(capitalVal) === normalizeString(currentQuestion.state.capital);
+
+            const isCorrect = isStateCorrect && isCapitalCorrect;
+            const expectedStr = `${currentQuestion.state.name} (${currentQuestion.state.capital})`;
+
+            checkAnswer(isCorrect ? expectedStr : 'falsch', expectedStr);
+        }
+
+        // --- ANSWER EVALUATION ---
+        function normalizeString(str) {
+            return str.toLowerCase()
+                      .replace(/ä/g, 'ae')
+                      .replace(/ö/g, 'oe')
+                      .replace(/ü/g, 'ue')
+                      .replace(/ß/g, 'ss')
+                      .replace(/\./g, '')
+                      .replace(/st /g, 'st ')
+                      .trim();
+        }
+
+        function checkAnswer(userGiven, expected) {
+            sessionStats.total++;
+            const isCorrect = normalizeString(userGiven) === normalizeString(expected);
+
+            if (isCorrect) {
+                sessionStats.correct++;
+                showFeedback(true, 'Richtig! 🎉');
+            } else {
+                showFeedback(false, `Falsch! Richtig: ${expected}`);
+            }
+
+            updateHUD();
+
+            setTimeout(() => {
+                nextQuestion();
+            }, 1200);
+        }
+
+        function showFeedback(isSuccess, message) {
+            const banner = document.getElementById('feedback-banner');
+            banner.innerText = message;
+            banner.className = `absolute top-0 left-0 right-0 p-3 text-center font-bold text-sm text-white transition-all ${
+                isSuccess ? 'bg-emerald-500' : 'bg-red-500'
+            }`;
+            banner.classList.remove('hidden');
+
+            setTimeout(() => {
+                banner.classList.add('hidden');
+            }, 1100);
+        }
+
+        // --- LOCAL STORAGE & STATISTICS ---
+        function getStorageStats() {
+            return JSON.parse(localStorage.getItem('at_geography_stats') || '[]');
+        }
+
+        function saveSessionResult(sessionData) {
+            const stats = getStorageStats();
+            stats.unshift(sessionData);
+            localStorage.setItem('at_geography_stats', JSON.stringify(stats));
+        }
+
+        function clearHistory() {
+            if (confirm('Möchtest du wirklich deine komplette Statistik löschen?')) {
+                localStorage.removeItem('at_geography_stats');
+                renderStatsTable();
+            }
+        }
+
+        function renderStatsTable() {
+            const stats = getStorageStats();
+            const tbody = document.getElementById('stats-table-body');
+            tbody.innerHTML = '';
+
+            if (stats.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Noch keine absolvierten Blöcke vorhanden. Starten Sie das Training!</td></tr>`;
+                document.getElementById('stat-best-score').innerText = '0 Gelöst';
+                document.getElementById('stat-avg-acc').innerText = '0%';
+                document.getElementById('stat-total-sessions').innerText = '0';
+                return;
+            }
+
+            // Grouping or summary calculations
+            let maxScore = 0;
+            let totalAccSum = 0;
+
+            stats.forEach(s => {
+                if (s.total > maxScore) maxScore = s.total;
+                totalAccSum += s.accuracy;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-800">${s.date}</td>
+                    <td class="p-4">1 Block (5 Min)</td>
+                    <td class="p-4 font-bold text-slate-800">${s.total}</td>
+                    <td class="p-4 text-emerald-600 font-bold">${s.correct}</td>
+                    <td class="p-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold ${
+                            s.accuracy >= 80 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }">
+                            ${s.accuracy}%
+                        </span>
+                    </td>
+                    <td class="p-4 font-extrabold text-indigo-600">${s.total} In 5 Min</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('stat-best-score').innerText = `${maxScore} Gelöst`;
+            document.getElementById('stat-avg-acc').innerText = `${Math.round(totalAccSum / stats.length)}%`;
+            document.getElementById('stat-total-sessions').innerText = stats.length;
+        }
+    </script>
+</body>
+</html>
